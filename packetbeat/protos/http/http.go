@@ -492,10 +492,16 @@ func (http *HTTP) newTransaction(requ, resp *message) common.MapStr {
 	}
 
 	if http.SendRequest {
-		event["request"] = string(http.cutMessageBody(requ))
+		requestData := string(http.cutMessageBodyWithHeaders(requ, false))
+		if len(requestData) > 0 {
+			event["request"] = requestData
+		}
 	}
 	if http.SendResponse {
-		event["response"] = string(http.cutMessageBody(resp))
+		responseData := string(http.cutMessageBodyWithHeaders(resp, false))
+		if len(responseData) > 0 {
+			event["response"] = responseData
+		}
 	}
 	if len(requ.Notes)+len(resp.Notes) > 0 {
 		event["notes"] = append(requ.Notes, resp.Notes...)
@@ -559,11 +565,17 @@ func parseCookieValue(raw string) string {
 }
 
 func (http *HTTP) cutMessageBody(m *message) []byte {
+	return http.cutMessageBodyWithHeaders(m, true)
+}
+
+func (http *HTTP) cutMessageBodyWithHeaders(m *message, include_header bool) []byte {
 	cutMsg := []byte{}
 
-	// add headers always
-	cutMsg = m.Raw[:m.bodyOffset]
-
+	// add headers
+	if include_header == true {
+		cutMsg = m.Raw[:m.bodyOffset]
+	}
+	
 	// add body
 	if len(m.ContentType) == 0 || http.shouldIncludeInBody(m.ContentType) {
 		if len(m.chunkedBody) > 0 {
