@@ -77,8 +77,25 @@ func ListDeviceNames(withDescription bool) ([]string, error) {
 	}
 
 	ret := []string{}
+	withIp := true
 	for _, dev := range devices {
-		if withDescription {
+		if withIp {
+			sb := ""
+			sb += fmt.Sprintf("%s", dev.Name)
+			
+			desc := "No description available"
+			if len(dev.Description) > 0 {
+				desc = dev.Description
+			}
+			
+			sb += fmt.Sprintf(" (%s)", desc)
+			
+			for _, address := range []pcap.InterfaceAddress(dev.Addresses) {
+				sb += fmt.Sprintf(" %s", address.IP.String())
+			}
+
+			ret = append(ret, sb)
+		} else if withDescription {
 			desc := "No description available"
 			if len(dev.Description) > 0 {
 				desc = dev.Description
